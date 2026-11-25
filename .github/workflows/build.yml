@@ -1,0 +1,129 @@
+name: Build & Release APK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode signing keystore
+        id: signing
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          if [[ -n "${SIGNING_KEYSTORE_BASE64}" && -n "${SIGNING_STORE_PASSWORD}" && -n "${SIGNING_KEY_ALIAS}" && -n "${SIGNING_KEY_PASSWORD}" ]]; then
+            KEYSTORE_PATH="${RUNNER_TEMP}/onda-release.jks"
+            printf '%s' "${SIGNING_KEYSTORE_BASE64}" | base64 --decode > "${KEYSTORE_PATH}"
+            chmod 600 "${KEYSTORE_PATH}"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "store_file=${KEYSTORE_PATH}" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            echo "Signing secrets unavailable on pull request; building unsigned release APK."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Missing required signing secrets (SIGNING_KEYSTORE_BASE64, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, SIGNING_KEY_PASSWORD)."
+            exit 1
+          fi
+
+      - name: Build release APK
+        env:
+          SIGNING_STORE_FILE: ${{ steps.signing.outputs.store_file }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Verify and prepare APK output
+        id: apk
+        run: |
+          mkdir -p dist
+          if [[ "${{ steps.signing.outputs.signed }}" == "true" ]]; then
+            RAW_APK="app/build/outputs/apk/release/app-release.apk"
+            test -f "${RAW_APK}"
+            APKSIGNER="$(find "${ANDROID_HOME}/build-tools" -name apksigner 2>/dev/null | sort -V | tail -n1)"
+            if [[ -n "${APKSIGNER}" ]]; then
+              "${APKSIGNER}" verify --print-certs "${RAW_APK}"
+            else
+              jarsigner -verify "${RAW_APK}"
+            fi
+            SUFFIX=""
+          else
+            RAW_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+            test -f "${RAW_APK}"
+            SUFFIX="-unsigned"
+          fi
+
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            APK_NAME="onda-${GITHUB_REF_NAME}${SUFFIX}.apk"
+          else
+            VERSION_NAME="$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts | head -n1)"
+            SHORT_SHA="${GITHUB_SHA::7}"
+            if [[ -n "${VERSION_NAME}" ]]; then
+              APK_NAME="onda-v${VERSION_NAME}-${SHORT_SHA}${SUFFIX}.apk"
+            else
+              APK_NAME="onda-${SHORT_SHA}${SUFFIX}.apk"
+            fi
+          fi
+
+          cp "${RAW_APK}" "dist/${APK_NAME}"
+          echo "name=${APK_NAME}" >> "$GITHUB_OUTPUT"
+          echo "path=dist/${APK_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Clean up temporary keystore
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/onda-release.jks"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: onda-apk
+          path: ${{ steps.apk.outputs.path }}
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') && steps.signing.outputs.signed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          APK_PATH="${{ steps.apk.outputs.path }}"
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${APK_PATH}" --clobber
+          else
+            gh release create "${TAG}" "${APK_PATH}" \
+              --title "Onda ${TAG}" \
+              --generate-notes
+          fi

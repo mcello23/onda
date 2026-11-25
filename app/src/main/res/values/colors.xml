@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="icon_background">#0B4F6C</color>
+
+    <!-- Material You Widget palette (Light fallback for API 26-30) -->
+    <color name="widget_surface">#EEF4FB</color>
+    <color name="widget_surface_container">#DCE9F8</color>
+    <color name="widget_primary">#006399</color>
+    <color name="widget_on_primary">#FFFFFF</color>
+    <color name="widget_on_surface">#0F172A</color>
+    <color name="widget_on_surface_variant">#475569</color>
+    <color name="widget_active_tile">#CDE5FF</color>
+</resources>

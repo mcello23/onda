@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material You Widget palette (Dark fallback for API 26-30) -->
+    <color name="widget_surface">#18202A</color>
+    <color name="widget_surface_container">#243040</color>
+    <color name="widget_primary">#92CCFF</color>
+    <color name="widget_on_primary">#003351</color>
+    <color name="widget_on_surface">#F1F5F9</color>
+    <color name="widget_on_surface_variant">#94A3B8</color>
+    <color name="widget_active_tile">#004B73</color>
+</resources>

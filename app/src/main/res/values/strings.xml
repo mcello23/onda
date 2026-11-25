@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Onda</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Início</string>
+    <string name="nav_explore">Explorar</string>
+    <string name="nav_podcasts">Podcasts</string>
+    <string name="nav_settings">Opções</string>
+
+    <!-- Android Auto & Library Folders -->
+    <string name="folder_favorites">Favoritos</string>
+    <string name="folder_recent">Recentes</string>
+    <string name="folder_podcasts">Podcasts</string>
+    <string name="folder_spain">Espanha</string>
+    <string name="folder_brazil">Brasil</string>
+    <string name="folder_us_uk">EUA &amp; Reino Unido</string>
+    <string name="folder_genres">Gêneros</string>
+
+    <!-- Playback actions -->
+    <string name="action_add_favorite">Adicionar aos favoritos</string>
+    <string name="action_remove_favorite">Remover dos favoritos</string>
+    <string name="action_rewind_15">Voltar 15s</string>
+    <string name="action_forward_30">Avançar 30s</string>
+
+    <!-- Widget -->
+    <string name="widget_name_favorites">Onda · Favoritas (4×2)</string>
+    <string name="widget_name_compact">Onda · Compacto (4×1)</string>
+    <string name="widget_description">Grade rolável com ícones de todas as suas rádios favoritas + controle rápido</string>
+    <string name="widget_compact_description">Barra compacta 4×1 com capa, música ao vivo e controles ⏮ ⏯ ⏭</string>
+    <string name="widget_idle_title">Onda Rádio</string>
+    <string name="widget_idle_subtitle">Toque para ouvir</string>
+    <string name="widget_live">Ao vivo</string>
+</resources>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Onda</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_explore">Explore</string>
+    <string name="nav_podcasts">Podcasts</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Android Auto & Library Folders -->
+    <string name="folder_favorites">Favorites</string>
+    <string name="folder_recent">Recent</string>
+    <string name="folder_podcasts">Podcasts</string>
+    <string name="folder_spain">Spain</string>
+    <string name="folder_brazil">Brazil</string>
+    <string name="folder_us_uk">USA &amp; UK</string>
+    <string name="folder_genres">Genres</string>
+
+    <!-- Playback actions -->
+    <string name="action_add_favorite">Add to favorites</string>
+    <string name="action_remove_favorite">Remove from favorites</string>
+    <string name="action_rewind_15">Rewind 15s</string>
+    <string name="action_forward_30">Forward 30s</string>
+
+    <!-- Widget -->
+    <string name="widget_name_favorites">Onda · Favorites (4×2)</string>
+    <string name="widget_name_compact">Onda · Compact (4×1)</string>
+    <string name="widget_description">Scrollable icon grid of all your favorite radio stations + quick play</string>
+    <string name="widget_compact_description">Compact 4×1 bar with artwork, live track and ⏮ ⏯ ⏭ controls</string>
+    <string name="widget_idle_title">Onda Radio</string>
+    <string name="widget_idle_subtitle">Tap to listen</string>
+    <string name="widget_live">Live</string>
+</resources>
