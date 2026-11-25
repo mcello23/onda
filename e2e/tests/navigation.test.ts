@@ -2,13 +2,18 @@ import { test, expect } from '@mobilewright/test';
 import { launchFreshOnda } from './helpers.js';
 
 test.describe('Bottom Navigation & Core Screens', () => {
-  test('launches Home and navigates across all 4 tabs', async ({ app, device, screen }) => {
+  test('launches Home and navigates across all 5 tabs', async ({ app, device, screen }) => {
     await launchFreshOnda(app, device, screen);
 
     // Home tab (PT-BR default)
     await expect(screen.getByText('Seus Favoritos')).toBeVisible();
     await expect(screen.getByText('Sem favoritos ainda')).toBeVisible();
     await expect(screen.getByText(/Top Estações/)).toBeVisible();
+
+    // Favorites tab (dedicated space)
+    await screen.getByTestId('nav_favorites').tap();
+    await expect(screen.getByText('Nenhum favorito salvo')).toBeVisible();
+    await expect(screen.getByTestId('favorites_empty_explore')).toBeVisible();
 
     // Explore tab
     await screen.getByTestId('nav_explore').tap();

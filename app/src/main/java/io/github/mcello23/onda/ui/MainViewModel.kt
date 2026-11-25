@@ -452,6 +452,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         retryTick.value++
     }
 
+    fun setHomeFavoritesCollapsed(collapsed: Boolean) {
+        AppSettingsStore.update { it.copy(homeFavoritesCollapsed = collapsed) }
+    }
+
     fun exportBackupJson(): String = StationRepo.exportBackupJson()
 
     fun importBackupJson(raw: String): Boolean = StationRepo.importBackupJson(raw).isSuccess

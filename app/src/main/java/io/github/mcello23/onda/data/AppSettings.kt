@@ -58,6 +58,7 @@ data class AppSettings(
     val defaultCountry: String = "ES",
     val language: AppLanguage = AppLanguage.PT,
     val podcastSpeed: Float = 1.0f,
+    val homeFavoritesCollapsed: Boolean = false,
 )
 
 object AppSettingsStore {

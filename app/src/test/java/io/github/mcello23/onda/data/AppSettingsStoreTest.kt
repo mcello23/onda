@@ -40,6 +40,7 @@ class AppSettingsStoreTest {
         assertEquals("ES", s.defaultCountry)
         assertEquals(AppLanguage.PT, s.language)
         assertEquals(1.0f, s.podcastSpeed, 0.001f)
+        assertFalse(s.homeFavoritesCollapsed)
     }
 
     @Test
@@ -53,6 +54,7 @@ class AppSettingsStoreTest {
                 eqPreset = EqPreset.ROCK,
                 eqBandLevels = EqPreset.ROCK.gainsMb,
                 language = AppLanguage.EN,
+                homeFavoritesCollapsed = true,
             )
         }
 
@@ -65,6 +67,7 @@ class AppSettingsStoreTest {
         assertEquals(SeedColor.EMERALD, decoded.seedColor)
         assertEquals(EqPreset.ROCK.gainsMb, decoded.eqBandLevels)
         assertEquals(AppLanguage.EN, decoded.language)
+        assertTrue(decoded.homeFavoritesCollapsed)
 
         val custom = AppSettings(themeMode = ThemeMode.LIGHT, defaultCountry = "BR")
         AppSettingsStore.replace(custom)

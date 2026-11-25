@@ -1,12 +1,20 @@
 package io.github.mcello23.onda.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,10 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MusicNote
@@ -41,14 +46,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.mcello23.onda.data.AppLanguage
@@ -63,6 +67,7 @@ import io.github.mcello23.onda.data.countryFlag
 fun HomeTab(
     lang: AppLanguage,
     favorites: List<Station>,
+    favoritesCollapsed: Boolean,
     recent: List<Station>,
     continuePodcasts: List<PodcastEpisode>,
     regions: List<Region>,
@@ -78,13 +83,17 @@ fun HomeTab(
     onPlayStation: (Station, String) -> Unit,
     onPlayPodcast: (PodcastEpisode) -> Unit,
     onToggleFavorite: (Station) -> Unit,
-    onMoveFavorite: (Int, Int) -> Unit,
+    onToggleFavoritesCollapsed: () -> Unit,
+    onOpenFavoritesTab: () -> Unit,
     onOpenExploreCountry: () -> Unit,
     onOpenWorldRock: () -> Unit,
     onOpenHistory: () -> Unit,
     onOpenAddCustom: () -> Unit,
 ) {
-    var editingFavs by remember { mutableStateOf(false) }
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (favoritesCollapsed) -90f else 0f,
+        label = "fav_chevron",
+    )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -158,144 +167,177 @@ fun HomeTab(
             }
         }
 
-        // Favorites Grid (Expressive Material You 2-column squircle tiles)
+        // Collapsible Favorites Strip (Option A) — 1 compact horizontal row + See all → Favorites tab
         item {
-            Column(Modifier.padding(horizontal = 16.dp)) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        L(lang, "Seus Favoritos", "Your Favorites"),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (favorites.size > 1) {
-                        TextButton(onClick = { editingFavs = !editingFavs }) {
-                            Icon(
-                                if (editingFavs) Icons.Default.Close else Icons.Default.Edit,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(if (editingFavs) L(lang, "Pronto", "Done") else L(lang, "Ordenar", "Reorder"))
-                        }
-                    } else {
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                        ) {
-                            Text(
-                                "Android Auto ✓",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-
-                if (favorites.isEmpty()) {
-                    Surface(
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        modifier = Modifier.fillMaxWidth(),
+            Surface(
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            ) {
+                Column(Modifier.padding(vertical = 10.dp)) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(start = 12.dp, end = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Row(
-                            Modifier.padding(16.dp),
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable(onClick = onToggleFavoritesCollapsed)
+                                .padding(horizontal = 4.dp, vertical = 6.dp)
+                                .testTag("home_favorites_toggle"),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                modifier = Modifier.size(44.dp),
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Favorite, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Icon(
+                                Icons.Default.ExpandMore,
+                                contentDescription = if (favoritesCollapsed) {
+                                    L(lang, "Expandir favoritos", "Expand favorites")
+                                } else {
+                                    L(lang, "Recolher favoritos", "Collapse favorites")
+                                },
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp).rotate(chevronRotation),
+                            )
+                            Text(
+                                L(lang, "Seus Favoritos", "Your Favorites"),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            if (favorites.isNotEmpty()) {
+                                Surface(
+                                    shape = RoundedCornerShape(999.dp),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                ) {
+                                    Text(
+                                        "${favorites.size}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    )
                                 }
                             }
-                            Column(Modifier.weight(1f)) {
+                        }
+
+                        if (favorites.isNotEmpty()) {
+                            TextButton(
+                                onClick = onOpenFavoritesTab,
+                                modifier = Modifier.testTag("home_favorites_see_all"),
+                            ) {
+                                Text(L(lang, "Ver todos", "See all"))
+                            }
+                        } else {
+                            Surface(
+                                shape = RoundedCornerShape(999.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                modifier = Modifier.padding(end = 6.dp),
+                            ) {
                                 Text(
-                                    L(lang, "Sem favoritos ainda", "No favorites yet"),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                Text(
-                                    L(lang, "Toque no coração em qualquer rádio para acesso rápido aqui, no Widget e no Android Auto.", "Tap the heart on any station for instant access here, on the Widget and Android Auto."),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    "Android Auto ✓",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                 )
                             }
                         }
                     }
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        favorites.chunked(2).forEachIndexed { rowIdx, pair ->
+
+                    AnimatedVisibility(
+                        visible = !favoritesCollapsed,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut(),
+                    ) {
+                        if (favorites.isEmpty()) {
                             Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                Modifier.padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
-                                pair.forEachIndexed { colIdx, station ->
-                                    val idx = rowIdx * 2 + colIdx
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(40.dp),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            Icons.Default.Favorite,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
+                                }
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        L(lang, "Sem favoritos ainda", "No favorites yet"),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                    Text(
+                                        L(
+                                            lang,
+                                            "Toque no coração em qualquer rádio para acesso rápido aqui, no Widget e no Android Auto.",
+                                            "Tap the heart on any station for instant access here, on the Widget and Android Auto.",
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        } else {
+                            LazyRow(
+                                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.testTag("home_favorites_strip"),
+                            ) {
+                                items(favorites, key = { "fav-strip-${it.uuid}" }) { station ->
                                     val isCurrent = !now.isPodcast && now.station?.uuid == station.uuid
                                     val isPlaying = isCurrent && now.playWhenReady
-                                    Surface(
-                                        onClick = { onPlayStation(station, Library.FAVORITES) },
-                                        modifier = Modifier.weight(1f),
-                                        shape = RoundedCornerShape(20.dp),
-                                        color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer
-                                        else MaterialTheme.colorScheme.surfaceContainer,
-                                        border = if (isCurrent) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .width(74.dp)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .clickable { onPlayStation(station, Library.FAVORITES) }
+                                            .padding(vertical = 2.dp),
                                     ) {
-                                        Row(
-                                            Modifier.padding(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
+                                        Surface(
+                                            shape = RoundedCornerShape(18.dp),
+                                            border = if (isCurrent) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+                                            color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
                                         ) {
-                                            StationArt(station, Modifier.size(46.dp), corner = 14.dp)
-                                            Column(Modifier.weight(1f).padding(start = 10.dp, end = 4.dp)) {
-                                                Text(
-                                                    station.displayName,
-                                                    style = MaterialTheme.typography.labelLarge,
-                                                    fontWeight = FontWeight.Bold,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                )
-                                                Spacer(Modifier.height(2.dp))
-                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                    if (isPlaying) {
-                                                        AnimatedEqualizerBars(modifier = Modifier.size(11.dp))
-                                                    }
-                                                    Text(
-                                                        "${station.flag} ${station.qualityBadge.ifBlank { station.country }}",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis,
-                                                    )
-                                                }
-                                            }
-                                            if (editingFavs) {
-                                                Column {
-                                                    if (idx > 0) {
-                                                        IconButton(onClick = { onMoveFavorite(idx, idx - 1) }, modifier = Modifier.size(24.dp)) {
-                                                            Icon(Icons.Default.ArrowUpward, contentDescription = null, modifier = Modifier.size(16.dp))
-                                                        }
-                                                    }
-                                                    if (idx < favorites.lastIndex) {
-                                                        IconButton(onClick = { onMoveFavorite(idx, idx + 1) }, modifier = Modifier.size(24.dp)) {
-                                                            Icon(Icons.Default.ArrowDownward, contentDescription = null, modifier = Modifier.size(16.dp))
-                                                        }
+                                            Box(Modifier.padding(if (isCurrent) 2.dp else 0.dp)) {
+                                                StationArt(station, Modifier.size(60.dp), corner = 16.dp)
+                                                if (isPlaying) {
+                                                    Surface(
+                                                        shape = RoundedCornerShape(8.dp),
+                                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
+                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
+                                                    ) {
+                                                        AnimatedEqualizerBars(
+                                                            modifier = Modifier.padding(4.dp).size(11.dp),
+                                                        )
                                                     }
                                                 }
                                             }
                                         }
+                                        Spacer(Modifier.height(6.dp))
+                                        Text(
+                                            station.displayName,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.SemiBold,
+                                            color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
                                     }
                                 }
-                                if (pair.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
                     }
@@ -376,11 +418,11 @@ fun HomeTab(
             }
         }
 
-        // Top Stations for Active Country (Spain by default!)
+        // Top Stations for Active Country — 2 rows × 3 columns (6 stations) + See all
         item {
-            Column {
+            Column(Modifier.padding(horizontal = 16.dp)) {
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -389,50 +431,62 @@ fun HomeTab(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = onOpenExploreCountry) {
+                    TextButton(
+                        onClick = onOpenExploreCountry,
+                        modifier = Modifier.testTag("home_top_stations_see_all"),
+                    ) {
                         Text(L(lang, "Ver todas", "See all"))
                     }
                 }
                 Spacer(Modifier.height(6.dp))
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    val cat = Library.regionCategory(homeCountry)
-                    items(homeStations.take(15), key = { it.uuid }) { station ->
-                        val isCurrent = !now.isPodcast && now.station?.uuid == station.uuid
-                        Surface(
-                            onClick = { onPlayStation(station, cat) },
-                            shape = RoundedCornerShape(22.dp),
-                            color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-                            border = if (isCurrent) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
-                            modifier = Modifier.width(136.dp),
+                val cat = Library.regionCategory(homeCountry)
+                val rows = homeStations.take(6).chunked(3)
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    rows.forEach { rowStations ->
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            Column(Modifier.padding(10.dp)) {
-                                Box {
-                                    StationArt(station, Modifier.size(116.dp), corner = 16.dp)
-                                    if (station.qualityBadge.isNotBlank()) {
-                                        QualityPill(
-                                            station.qualityBadge,
-                                            modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp),
+                            rowStations.forEach { station ->
+                                val isCurrent = !now.isPodcast && now.station?.uuid == station.uuid
+                                Surface(
+                                    onClick = { onPlayStation(station, cat) },
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceContainerLow,
+                                    border = if (isCurrent) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Column(Modifier.padding(8.dp)) {
+                                        Box(Modifier.fillMaxWidth().aspectRatio(1f)) {
+                                            StationArt(station, Modifier.fillMaxSize(), corner = 14.dp)
+                                            if (station.qualityBadge.isNotBlank()) {
+                                                QualityPill(
+                                                    station.qualityBadge,
+                                                    modifier = Modifier.align(Alignment.BottomEnd).padding(5.dp),
+                                                )
+                                            }
+                                        }
+                                        Spacer(Modifier.height(6.dp))
+                                        Text(
+                                            station.displayName,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Text(
+                                            station.tags.split(',').firstOrNull()?.trim().orEmpty().ifBlank { station.country },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
                                         )
                                     }
                                 }
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    station.displayName,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    station.tags.split(',').firstOrNull()?.trim().orEmpty().ifBlank { station.country },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
+                            }
+                            repeat(3 - rowStations.size) {
+                                Spacer(Modifier.weight(1f))
                             }
                         }
                     }

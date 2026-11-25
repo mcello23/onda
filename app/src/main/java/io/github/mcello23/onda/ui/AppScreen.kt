@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.filled.Podcasts
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Podcasts
 import androidx.compose.material.icons.outlined.Settings
@@ -116,11 +118,12 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
                 NavigationBar {
                     val items = listOf(
                         Triple(L(lang, "Início", "Home"), Icons.Filled.Home, Icons.Outlined.Home),
+                        Triple(L(lang, "Favoritos", "Favorites"), Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder),
                         Triple(L(lang, "Explorar", "Explore"), Icons.Filled.Explore, Icons.Outlined.Explore),
                         Triple("Podcasts", Icons.Filled.Podcasts, Icons.Outlined.Podcasts),
                         Triple(L(lang, "Opções", "Settings"), Icons.Filled.Settings, Icons.Outlined.Settings),
                     )
-                    val tabTags = listOf("nav_home", "nav_explore", "nav_podcasts", "nav_settings")
+                    val tabTags = listOf("nav_home", "nav_favorites", "nav_explore", "nav_podcasts", "nav_settings")
                     items.forEachIndexed { idx, (label, filled, outlined) ->
                         NavigationBarItem(
                             selected = tab == idx,
@@ -139,6 +142,7 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
                 0 -> HomeTab(
                     lang = lang,
                     favorites = favorites,
+                    favoritesCollapsed = settings.homeFavoritesCollapsed,
                     recent = recent,
                     continuePodcasts = continuePodcasts,
                     regions = vm.regions,
@@ -154,19 +158,32 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
                     onPlayStation = vm::play,
                     onPlayPodcast = vm::playPodcast,
                     onToggleFavorite = vm::toggleFavorite,
-                    onMoveFavorite = vm::moveFavorite,
+                    onToggleFavoritesCollapsed = {
+                        vm.setHomeFavoritesCollapsed(!settings.homeFavoritesCollapsed)
+                    },
+                    onOpenFavoritesTab = { tab = 1 },
                     onOpenExploreCountry = {
                         vm.selectGenre(null)
-                        tab = 1
+                        tab = 2
                     },
                     onOpenWorldRock = {
                         vm.selectGenre("rock")
-                        tab = 1
+                        tab = 2
                     },
                     onOpenHistory = { showHistory = true },
                     onOpenAddCustom = { showAddCustom = true },
                 )
-                1 -> ExploreTab(
+                1 -> FavoritesTab(
+                    lang = lang,
+                    favorites = favorites,
+                    now = now,
+                    onPlayStation = vm::play,
+                    onToggleFavorite = vm::toggleFavorite,
+                    onMoveFavorite = vm::moveFavorite,
+                    onOpenAddCustom = { showAddCustom = true },
+                    onOpenExplore = { tab = 2 },
+                )
+                2 -> ExploreTab(
                     lang = lang,
                     query = query,
                     countryCode = exploreCountry,
@@ -183,7 +200,7 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
                     onPlay = vm::play,
                     onFavorite = vm::toggleFavorite,
                 )
-                2 -> PodcastsTab(
+                3 -> PodcastsTab(
                     lang = lang,
                     query = podcastQuery,
                     loading = podcastLoading,
@@ -205,7 +222,7 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
                     onCancelDownload = vm::cancelDownload,
                     onDeleteDownload = vm::deleteDownload,
                 )
-                3 -> SettingsTab(
+                4 -> SettingsTab(
                     settings = settings,
                     countryLabel = vm.countryLabel(settings.defaultCountry),
                     onThemeMode = vm::setThemeMode,
