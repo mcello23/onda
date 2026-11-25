@@ -66,10 +66,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: |
-            cd e2e
-            npx mobilewright doctor || true
-            npm test
+          script: cd e2e && (npx mobilewright doctor || true) && npm test
 
       - name: Upload Mobilewright report and failure artifacts
         if: always()
