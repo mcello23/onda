@@ -29,5 +29,5 @@ export default defineConfig({
     timeout: 15_000,
   },
   reporter: [['list'], ['html', { open: 'never' }]],
-  ...(process.env['ANDROID_SERIAL'] ? { deviceId: process.env['ANDROID_SERIAL'] } : {}),
+  ...(process.env['MOBILEWRIGHT_DEVICE_ID'] ? { deviceId: process.env['MOBILEWRIGHT_DEVICE_ID'] } : {}),
 });
