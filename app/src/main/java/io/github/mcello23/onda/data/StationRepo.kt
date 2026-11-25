@@ -388,4 +388,23 @@ object StationRepo {
     private fun saveStations(key: String, stations: List<Station>) {
         prefs.edit().putString(key, json.encodeToString(stations)).apply()
     }
+
+    internal fun resetForTest(context: Context) {
+        AppSettingsStore.resetForTest(context)
+        prefs = context.applicationContext.getSharedPreferences("onda", Context.MODE_PRIVATE)
+        prefs.edit().clear().apply()
+        cache.clear()
+        popularByCountry.clear()
+        byGenreCache.clear()
+        countriesCache = null
+        searchResults = emptyList()
+        lastQuery = null
+        curated = runCatching {
+            context.assets.open("stations.json").bufferedReader().use { json.decodeFromString<List<Station>>(it.readText()) }
+        }.getOrDefault(emptyList())
+        _favorites.value = emptyList()
+        _recent.value = emptyList()
+        _songHistory.value = emptyList()
+        remember(curated)
+    }
 }

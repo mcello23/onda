@@ -190,6 +190,20 @@ object PodcastRepo {
         prefs.edit().putString(KEY_EPISODES, json.encodeToString(_savedEpisodes.value)).apply()
     }
 
+    internal fun resetForTest(context: Context) {
+        val app = context.applicationContext
+        prefs = app.getSharedPreferences("onda", Context.MODE_PRIVATE)
+        prefs.edit().remove(KEY_SUBSCRIPTIONS).remove(KEY_EPISODES).apply()
+        downloadDir = File(app.filesDir, "podcasts").apply { mkdirs() }
+        episodeCache.clear()
+        feedCache.clear()
+        downloadJobs.values.forEach { it.cancel() }
+        downloadJobs.clear()
+        _subscriptions.value = emptyList()
+        _savedEpisodes.value = emptyList()
+        _downloadProgress.value = emptyMap()
+    }
+
     private fun downloadToFile(urlStr: String, target: File, onProgress: (Float) -> Unit) {
         var url = URL(urlStr)
         repeat(6) {

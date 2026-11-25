@@ -87,7 +87,7 @@ object PodcastApi {
         parseRss(show, xml, limit)
     }
 
-    private fun parseRss(show: PodcastShow, xml: String, limit: Int): List<PodcastEpisode> {
+    internal fun parseRss(show: PodcastShow, xml: String, limit: Int): List<PodcastEpisode> {
         val episodes = mutableListOf<PodcastEpisode>()
         val parser = Xml.newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)

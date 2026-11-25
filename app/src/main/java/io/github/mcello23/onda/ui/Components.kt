@@ -59,6 +59,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -67,6 +68,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -282,10 +286,13 @@ fun StationRow(
                     )
                 }
             }
-            IconButton(onClick = onFavorite) {
+            IconButton(
+                onClick = onFavorite,
+                modifier = Modifier.testTag("station_fav_${station.uuid}"),
+            ) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = null,
+                    contentDescription = if (isFavorite) "Remove ${station.displayName} from favorites" else "Favorite ${station.displayName}",
                     tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -293,7 +300,7 @@ fun StationRow(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun CountryPickerSheet(
     countries: List<CountryInfo>,
@@ -328,6 +335,7 @@ fun CountryPickerSheet(
         Column(
             Modifier
                 .fillMaxWidth()
+                .semantics { testTagsAsResourceId = true }
                 .navigationBarsPadding()
                 .padding(horizontal = 16.dp)
                 .height(520.dp)
@@ -341,7 +349,7 @@ fun CountryPickerSheet(
             OutlinedTextField(
                 value = search,
                 onValueChange = { search = it },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("country_search_input"),
                 placeholder = { Text(L(lang, "Buscar país...", "Search country...")) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
@@ -362,6 +370,7 @@ fun CountryPickerSheet(
                     val active = c.code.equals(selectedCode, ignoreCase = true)
                     Surface(
                         onClick = { onSelect(c.code); onDismiss() },
+                        modifier = Modifier.testTag("country_item_${c.code.uppercase()}"),
                         shape = RoundedCornerShape(16.dp),
                         color = if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
                     ) {
@@ -500,6 +509,7 @@ fun SongHistorySheet(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AddCustomStationDialog(
     lang: AppLanguage,
@@ -513,6 +523,7 @@ fun AddCustomStationDialog(
     val valid = name.isNotBlank() && (url.trim().startsWith("http://") || url.trim().startsWith("https://"))
 
     AlertDialog(
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
         onDismissRequest = onDismiss,
         title = { Text(L(lang, "Adicionar Rádio Manual", "Add Custom Radio")) },
         text = {
@@ -522,7 +533,7 @@ fun AddCustomStationDialog(
                     onValueChange = { name = it },
                     label = { Text(L(lang, "Nome da estação", "Station name")) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("custom_radio_name"),
                 )
                 OutlinedTextField(
                     value = url,
@@ -530,31 +541,37 @@ fun AddCustomStationDialog(
                     label = { Text(L(lang, "URL do stream (MP3/AAC/M3U8)", "Stream URL (MP3/AAC/M3U8)")) },
                     placeholder = { Text("https://...") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("custom_radio_url"),
                 )
                 OutlinedTextField(
                     value = country,
                     onValueChange = { country = it },
                     label = { Text(L(lang, "País (opcional)", "Country (optional)")) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("custom_radio_country"),
                 )
                 OutlinedTextField(
                     value = genre,
                     onValueChange = { genre = it },
                     label = { Text(L(lang, "Gênero (opcional)", "Genre (optional)")) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("custom_radio_genre"),
                 )
             }
         },
         confirmButton = {
-            Button(enabled = valid, onClick = { onAdd(name, url, country, genre); onDismiss() }) {
+            Button(
+                enabled = valid,
+                onClick = { onAdd(name, url, country, genre); onDismiss() },
+                modifier = Modifier.testTag("custom_radio_confirm"),
+            ) {
                 Text(L(lang, "Adicionar", "Add"))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(L(lang, "Cancelar", "Cancel")) }
+            TextButton(onClick = onDismiss, modifier = Modifier.testTag("custom_radio_cancel")) {
+                Text(L(lang, "Cancelar", "Cancel"))
+            }
         },
     )
 }

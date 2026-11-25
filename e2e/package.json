@@ -1,0 +1,19 @@
+{
+  "name": "onda-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "doctor": "mobilewright doctor",
+    "devices": "mobilewright devices",
+    "test": "mobilewright test",
+    "test:report": "mobilewright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@mobilewright/test": "^0.0.72",
+    "@types/node": "^22.0.0",
+    "mobilewright": "^0.0.72",
+    "typescript": "^5.8.0"
+  }
+}

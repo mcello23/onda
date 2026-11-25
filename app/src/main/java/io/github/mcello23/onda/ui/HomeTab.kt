@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -110,10 +111,10 @@ fun HomeTab(
                         fontWeight = FontWeight.ExtraBold,
                     )
                 }
-                IconButton(onClick = onOpenAddCustom) {
+                IconButton(onClick = onOpenAddCustom, modifier = Modifier.testTag("home_add_custom")) {
                     Icon(Icons.Default.Add, contentDescription = L(lang, "Adicionar rádio", "Add radio"))
                 }
-                IconButton(onClick = onOpenHistory) {
+                IconButton(onClick = onOpenHistory, modifier = Modifier.testTag("home_song_history")) {
                     Icon(Icons.Default.History, contentDescription = L(lang, "Histórico de músicas", "Song history"))
                 }
             }

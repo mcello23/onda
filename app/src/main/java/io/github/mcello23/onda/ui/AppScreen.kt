@@ -42,9 +42,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,7 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.mcello23.onda.data.AppLanguage
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun AppScreen(vm: MainViewModel = viewModel()) {
     val context = LocalContext.current
@@ -98,6 +102,7 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
     val continuePodcasts = savedEpisodes.filter { (it.positionMs > 2_000L && !it.completed) || it.isDownloaded }
 
     Scaffold(
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
         bottomBar = {
             Column {
                 if (now.hasActiveItem) {
@@ -115,10 +120,12 @@ fun AppScreen(vm: MainViewModel = viewModel()) {
                         Triple("Podcasts", Icons.Filled.Podcasts, Icons.Outlined.Podcasts),
                         Triple(L(lang, "Opções", "Settings"), Icons.Filled.Settings, Icons.Outlined.Settings),
                     )
+                    val tabTags = listOf("nav_home", "nav_explore", "nav_podcasts", "nav_settings")
                     items.forEachIndexed { idx, (label, filled, outlined) ->
                         NavigationBarItem(
                             selected = tab == idx,
                             onClick = { tab = idx },
+                            modifier = Modifier.testTag(tabTags[idx]),
                             icon = { Icon(if (tab == idx) filled else outlined, contentDescription = label) },
                             label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         )
@@ -322,6 +329,7 @@ private fun FloatingMiniPlayer(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp)
+            .testTag("mini_player")
             .clickable(onClick = onOpen),
     ) {
         Column {
@@ -370,7 +378,7 @@ private fun FloatingMiniPlayer(
                     onClick = onToggle,
                     shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(46.dp),
+                    modifier = Modifier.size(46.dp).testTag("mini_player_toggle"),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -379,7 +387,11 @@ private fun FloatingMiniPlayer(
                                 now.isPodcast -> Icons.Default.Pause
                                 else -> Icons.Default.Stop
                             },
-                            contentDescription = null,
+                            contentDescription = when {
+                                !now.playWhenReady -> L(lang, "Tocar", "Play")
+                                now.isPodcast -> L(lang, "Pausar", "Pause")
+                                else -> L(lang, "Parar", "Stop")
+                            },
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(26.dp),
                         )

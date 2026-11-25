@@ -93,4 +93,10 @@ object AppSettingsStore {
             prefs.edit().putString(KEY_SETTINGS, json.encodeToString(next)).apply()
         }
     }
+
+    internal fun resetForTest(context: Context) {
+        prefs = context.applicationContext.getSharedPreferences("onda", Context.MODE_PRIVATE)
+        prefs.edit().remove(KEY_SETTINGS).apply()
+        _settings.value = AppSettings()
+    }
 }

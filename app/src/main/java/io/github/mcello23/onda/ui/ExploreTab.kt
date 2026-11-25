@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -82,12 +83,12 @@ fun ExploreTab(
             OutlinedTextField(
                 value = query,
                 onValueChange = onQuery,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("explore_search_input"),
                 placeholder = { Text(L(lang, "Buscar rádio, gênero ou país...", "Search station, genre or country...")) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
-                        IconButton(onClick = { onQuery("") }) {
+                        IconButton(onClick = { onQuery("") }, modifier = Modifier.testTag("explore_search_clear")) {
                             Icon(Icons.Default.Clear, contentDescription = L(lang, "Limpar", "Clear"))
                         }
                     }
