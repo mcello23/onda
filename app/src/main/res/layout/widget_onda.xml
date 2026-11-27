@@ -54,11 +54,11 @@
 
         <ImageButton
             android:id="@+id/widget_play_btn"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="@drawable/widget_play_bg"
-            android:contentDescription="@string/app_name"
-            android:padding="9dp"
+            android:contentDescription="@string/action_play_pause"
+            android:padding="12dp"
             android:scaleType="fitCenter"
             android:src="@drawable/ic_play"
             android:tint="@color/widget_on_primary" />

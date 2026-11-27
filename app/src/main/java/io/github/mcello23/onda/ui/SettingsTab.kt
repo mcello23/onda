@@ -1,9 +1,10 @@
 package io.github.mcello23.onda.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,11 +24,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Equalizer
+import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.FilterChip
@@ -56,6 +59,8 @@ import io.github.mcello23.onda.data.SeedColor
 import io.github.mcello23.onda.data.StreamQuality
 import io.github.mcello23.onda.data.ThemeMode
 import io.github.mcello23.onda.data.countryFlag
+
+private const val PRIVACY_POLICY_URL = "https://github.com/mcello23/onda/blob/main/docs/privacy-policy.md"
 
 @Composable
 fun SettingsTab(
@@ -166,7 +171,11 @@ fun SettingsTab(
                             val selected = settings.seedColor == seed
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.clickable { onSeedColor(seed) },
+                                modifier = Modifier
+                                    .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { onSeedColor(seed) }
+                                    .padding(4.dp),
                             ) {
                                 Box(
                                     Modifier
@@ -293,9 +302,9 @@ fun SettingsTab(
             }
         }
 
-        // BACKUP & ROADMAP SYNC
+        // LOCAL BACKUP
         item {
-            SettingsCard(title = L(lang, "Backup & Sincronização", "Backup & Sync")) {
+            SettingsCard(title = L(lang, "Backup Local", "Local Backup")) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                     Surface(
                         onClick = { exportLauncher.launch("onda-backup.json") },
@@ -322,24 +331,40 @@ fun SettingsTab(
                         }
                     }
                 }
+            }
+        }
 
-                HorizontalDivider(Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                ) {
-                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CloudQueue, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(L(lang, "Sincronização na Nuvem (Firebase)", "Cloud Sync (Firebase)"), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            Text(
-                                L(lang, "No roadmap: login opcional com Google para sincronizar favoritos e podcasts entre aparelhos.", "On the roadmap: optional Google Sign-In to sync favorites and podcasts across devices."),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+        // PRIVACY & LEGAL
+        item {
+            SettingsCard(title = L(lang, "Privacidade & Legal", "Privacy & Legal")) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            runCatching {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
+                            }
                         }
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Default.PrivacyTip, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                        Text(L(lang, "Política de Privacidade", "Privacy Policy"), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Text(
+                            L(lang, "Sem anúncios, sem contas e sem rastreamento. Seus dados ficam apenas no aparelho.", "No ads, no accounts, and no tracking. Your data stays on your device."),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
+                    Icon(
+                        Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = L(lang, "Abrir política de privacidade", "Open privacy policy"),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
                 }
             }
         }

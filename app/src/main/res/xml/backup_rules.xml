@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Include only non-sensitive app settings, favorite stations, and podcast subscriptions.
+         Everything else (widget snapshots, downloaded podcasts, caches) is excluded implicitly. -->
+    <include domain="sharedpref" path="onda.xml" />
+</full-backup-content>

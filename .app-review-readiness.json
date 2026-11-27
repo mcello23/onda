@@ -1,0 +1,23 @@
+{
+  "build": "1.2.1 (6)",
+  "checked_on": "2026-11-27",
+  "enforce": false,
+  "checks": {
+    "demo_account": "n/a",
+    "live_backend": "n/a",
+    "review_notes": "todo",
+    "screenshots_match_build": "todo",
+    "account_deletion_device_test": "n/a",
+    "privacy_labels_match_runtime": "todo",
+    "iap_reachable_by_reviewer": "n/a"
+  },
+  "notes": {
+    "demo_account": "N/A: Onda has no accounts or login.",
+    "live_backend": "N/A: Onda has no developer-operated backend; it queries public radio-browser.info, Apple iTunes Search API, and broadcaster/RSS feeds directly.",
+    "review_notes": "Complete Foreground Service (mediaPlayback) declaration and Android Auto opt-in in Play Console before promoting past Internal Testing.",
+    "screenshots_match_build": "Required when creating Closed/Production store listing; keep third-party station trademarks out of listing assets.",
+    "account_deletion_device_test": "N/A: Onda does not create or store user accounts.",
+    "privacy_labels_match_runtime": "Verify Play Console Data Safety form against docs/privacy-policy.md before submitting.",
+    "iap_reachable_by_reviewer": "N/A: Onda is completely free with no in-app purchases, subscriptions, or ads."
+  }
+}

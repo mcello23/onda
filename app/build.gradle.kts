@@ -30,14 +30,14 @@ val hasReleaseSigning = releaseStoreFile != null &&
 
 android {
     namespace = "io.github.mcello23.onda"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.mcello23.onda"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 5
-        versionName = "1.2.0"
+        targetSdk = 36
+        versionCode = 6
+        versionName = "1.2.1"
     }
 
     signingConfigs {
@@ -53,7 +53,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             }

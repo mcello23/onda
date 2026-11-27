@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+        Public broadcast radio streams (Shoutcast/Icecast) and some podcast RSS audio enclosures
+        still serve media over plain HTTP. API calls (Radio Browser, Apple iTunes Search, Google S2
+        favicons) always use HTTPS. Trust only system CAs in release builds.
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

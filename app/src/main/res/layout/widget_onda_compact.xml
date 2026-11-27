@@ -58,35 +58,35 @@
 
     <ImageButton
         android:id="@+id/widget_compact_prev"
-        android:layout_width="34dp"
-        android:layout_height="34dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginEnd="4dp"
         android:background="@drawable/widget_btn_tonal"
-        android:contentDescription="@string/app_name"
-        android:padding="7dp"
+        android:contentDescription="@string/action_previous"
+        android:padding="9dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_skip_previous"
         android:tint="@color/widget_on_surface" />
 
     <ImageButton
         android:id="@+id/widget_compact_play"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginEnd="4dp"
         android:background="@drawable/widget_play_bg"
-        android:contentDescription="@string/app_name"
-        android:padding="9dp"
+        android:contentDescription="@string/action_play_pause"
+        android:padding="12dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_play"
         android:tint="@color/widget_on_primary" />
 
     <ImageButton
         android:id="@+id/widget_compact_next"
-        android:layout_width="34dp"
-        android:layout_height="34dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:background="@drawable/widget_btn_tonal"
-        android:contentDescription="@string/app_name"
-        android:padding="7dp"
+        android:contentDescription="@string/action_next"
+        android:padding="9dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_skip_next"
         android:tint="@color/widget_on_surface" />

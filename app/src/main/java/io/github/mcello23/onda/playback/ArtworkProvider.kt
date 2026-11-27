@@ -17,7 +17,9 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.net.Uri
+import android.os.Binder
 import android.os.ParcelFileDescriptor
+import android.os.Process
 import com.caverock.androidsvg.SVG
 import io.github.mcello23.onda.BuildConfig
 import io.github.mcello23.onda.data.Monogram
@@ -26,8 +28,12 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
+import java.net.InetAddress
 import java.net.URL
 import java.security.MessageDigest
+import java.security.SecureRandom
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 class ArtworkProvider : ContentProvider() {
 
@@ -38,17 +44,25 @@ class ArtworkProvider : ContentProvider() {
         private const val TRANSIENT_TTL_MS = 60_000L
         private const val MIN_LOGO_SIZE = 48
         private const val VERSION = "v5"
+        private const val PARAM_SIG = "sig"
+
+        // Per-process random HMAC key so external callers (Android Auto, SystemUI) can only fetch
+        // artwork URIs minted by Onda itself, preventing arbitrary URL fetching / SSRF.
+        private val uriMacKey: ByteArray = ByteArray(32).also { SecureRandom().nextBytes(it) }
 
         fun uriFor(favicon: String, name: String, fallbackUrl: String = ""): Uri {
             val src = favicon.trim()
             val fb = fallbackUrl.trim()
+            val u = src.takeIf(::isHttp).orEmpty()
+            val f = fb.takeIf { isHttp(it) && it != src }.orEmpty()
             val builder = Uri.Builder()
                 .scheme("content")
                 .authority("${BuildConfig.APPLICATION_ID}.art")
                 .appendPath("img")
                 .appendQueryParameter("n", name)
-            if (isHttp(src)) builder.appendQueryParameter("u", src)
-            if (isHttp(fb) && fb != src) builder.appendQueryParameter("f", fb)
+            if (u.isNotEmpty()) builder.appendQueryParameter("u", u)
+            if (f.isNotEmpty()) builder.appendQueryParameter("f", f)
+            builder.appendQueryParameter(PARAM_SIG, computeSignature("img|$name|$u|$f"))
             return builder.build()
         }
 
@@ -56,16 +70,81 @@ class ArtworkProvider : ContentProvider() {
          * Generates a crisp 512x512 gradient category tile for Android Auto folders
          * (e.g. Spain, Brazil, World Rock, Jazz, etc.).
          */
-        fun categoryUri(badge: String, title: String, colorStart: Int, colorEnd: Int): Uri =
-            Uri.Builder()
+        fun categoryUri(badge: String, title: String, colorStart: Int, colorEnd: Int): Uri {
+            val s = colorStart.toString()
+            val e = colorEnd.toString()
+            return Uri.Builder()
                 .scheme("content")
                 .authority("${BuildConfig.APPLICATION_ID}.art")
                 .appendPath("cat")
                 .appendQueryParameter("b", badge)
                 .appendQueryParameter("t", title)
-                .appendQueryParameter("s", colorStart.toString())
-                .appendQueryParameter("e", colorEnd.toString())
+                .appendQueryParameter("s", s)
+                .appendQueryParameter("e", e)
+                .appendQueryParameter(PARAM_SIG, computeSignature("cat|$badge|$title|$s|$e"))
                 .build()
+        }
+
+        internal fun hasValidSignature(uri: Uri): Boolean {
+            val provided = uri.getQueryParameter(PARAM_SIG)?.takeIf { it.isNotEmpty() } ?: return false
+            val payload = when (uri.pathSegments.firstOrNull()) {
+                "cat" -> {
+                    val b = uri.getQueryParameter("b").orEmpty()
+                    val t = uri.getQueryParameter("t").orEmpty()
+                    val s = uri.getQueryParameter("s").orEmpty()
+                    val e = uri.getQueryParameter("e").orEmpty()
+                    "cat|$b|$t|$s|$e"
+                }
+                "img" -> {
+                    val n = uri.getQueryParameter("n").orEmpty()
+                    val u = uri.getQueryParameter("u")?.takeIf(::isHttp).orEmpty()
+                    val f = uri.getQueryParameter("f")?.takeIf(::isHttp).orEmpty()
+                    "img|$n|$u|$f"
+                }
+                else -> return false
+            }
+            val expected = computeSignature(payload)
+            return MessageDigest.isEqual(expected.toByteArray(), provided.toByteArray())
+        }
+
+        internal fun isPublicAddress(address: InetAddress): Boolean {
+            if (address.isLoopbackAddress ||
+                address.isAnyLocalAddress ||
+                address.isLinkLocalAddress ||
+                address.isSiteLocalAddress ||
+                address.isMulticastAddress
+            ) {
+                return false
+            }
+            val bytes = address.address
+            if (bytes.size == 4) {
+                val b0 = bytes[0].toInt() and 0xFF
+                val b1 = bytes[1].toInt() and 0xFF
+                // Block 0.0.0.0/8 and CGNAT 100.64.0.0/10
+                if (b0 == 0 || (b0 == 100 && (b1 and 0xC0) == 64)) return false
+            } else if (bytes.size == 16) {
+                // Block IPv6 Unique Local Addresses (fc00::/7)
+                if ((bytes[0].toInt() and 0xFE) == 0xFC) return false
+            }
+            return true
+        }
+
+        internal fun isSafePublicUrl(url: URL): Boolean {
+            if (url.protocol != "http" && url.protocol != "https") return false
+            val host = url.host?.trim().orEmpty()
+            if (host.isEmpty() || host.equals("localhost", ignoreCase = true)) return false
+            val addresses = runCatching { InetAddress.getAllByName(host) }.getOrNull()
+            if (addresses.isNullOrEmpty()) return false
+            return addresses.all(::isPublicAddress)
+        }
+
+        private fun computeSignature(payload: String): String {
+            val mac = Mac.getInstance("HmacSHA256")
+            mac.init(SecretKeySpec(uriMacKey, "HmacSHA256"))
+            return mac.doFinal(payload.toByteArray(Charsets.UTF_8))
+                .take(12)
+                .joinToString("") { "%02x".format(it) }
+        }
 
         fun resourceUri(context: Context, drawableResId: Int): Uri =
             Uri.parse("android.resource://${context.packageName}/$drawableResId")
@@ -100,6 +179,11 @@ class ArtworkProvider : ContentProvider() {
     override fun onCreate() = true
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
+        if (mode != "r") throw SecurityException("ArtworkProvider is read-only")
+        val sameUid = Binder.getCallingUid() == Process.myUid()
+        if (!sameUid && !hasValidSignature(uri)) {
+            throw SecurityException("Unauthorized artwork URI")
+        }
         val dir = File(context!!.cacheDir, "art").apply { mkdirs() }
         if (uri.pathSegments.firstOrNull() == "cat") {
             val badge = uri.getQueryParameter("b").orEmpty()
@@ -224,6 +308,7 @@ class ArtworkProvider : ContentProvider() {
     private fun download(src: String): ByteArray {
         var url = URL(src)
         repeat(5) {
+            if (!isSafePublicUrl(url)) throw PermanentFailure("Blocked non-public artwork URL")
             val conn = url.openConnection() as HttpURLConnection
             try {
                 conn.connectTimeout = 6_000
@@ -234,7 +319,7 @@ class ArtworkProvider : ContentProvider() {
                 if (code in 300..399) {
                     val location = conn.getHeaderField("Location") ?: throw PermanentFailure("Redirect without location")
                     url = URL(url, location)
-                    if (url.protocol != "http" && url.protocol != "https") throw PermanentFailure("Bad redirect")
+                    if (!isSafePublicUrl(url)) throw PermanentFailure("Blocked redirect to non-public URL")
                     return@repeat
                 }
                 if (code in 400..499 && code != 408 && code != 429) throw PermanentFailure("HTTP $code")
